@@ -1,7 +1,6 @@
 from agents import Agent,Runner,function_tool,handoff,SQLiteSession,OpenAIChatCompletionsModel,set_tracing_disabled,set_default_openai_api,set_default_openai_client
 from agents.tool import WebSearchTool
 from pydantic import BaseModel
-# from mem0 import MemoryClient
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 load_dotenv()
@@ -14,7 +13,6 @@ set_default_openai_api("responses")
 BASE_URL = "https://api.aimlapi.com/v1"
 MODEL =  'openai/gpt-4.1-2025-04-14'
 api_key = os.getenv("OPENAI_API_KEY")
-mem_api_key = os.getenv("MEM0_API_KEY")
 
 client = AsyncOpenAI(
     api_key=api_key,
@@ -28,8 +26,21 @@ class Query_Output(BaseModel):
     location: str
     postcode: str
     link: str
+    property_type: str
+def is_location_query(query: str) -> bool:
+    keywords = [
+        "distance", "how far", "nearest", "close to", "near", "from", "location", "coordinates"
+    ]
+    query_lower = query.lower()
+    return any(kw in query_lower for kw in keywords)
 
-
+@function_tool()
+def user_output(info:Query_Output) :
+    """
+    This is a function tool that formats the output of the real estate agent query.
+    """
+    return f"Following is the property found matching your search, Price: {info.price}, Location: {info.location}, Postcode: {info.postcode}, Link: {info.link}, Property Type: {info.property_type}"
+    
 
 room_agent = Agent(
     name="Room Assistant",
@@ -57,13 +68,21 @@ studio_agent = Agent(
     model=MODEL
 )
 
+location_agent = Agent(
+    name="Location Assistant",
+    instructions="""You are a location agent assistant. You help users find information about locations in the UK using the geo_tool to convert location names into coordinates (latitude and longitude). You provide accurate and concise information based on user queries.
+    You also have memory capabilities!""",
+    tools=[WebSearchTool() ],
+    model=MODEL
+)
+
 agent = Agent(
     name="Realestate Assistant",
-    instructions="You are a helpful assistant for real estate inquiries. You will assist users with searching rooms according to postcode, price, distance from specific location, search website like Rightmove,Zoopla and Spareroom, use thw websearch tool to find relevant listings, and provide detailed information about properties.",
+    instructions="You are a helpful assistant for real estate inquiries. You will assist users with searching rooms according to postcode, price, distance from specific location, search website like Rightmove,Zoopla and Spareroom, use thw websearch tool to find relevant listings, and provide detailed information about properties in the format set by the tool user_output.",
     model=MODEL,
-    tools=[WebSearchTool()],
-    handoffs=[room_agent, flat_agent, studio_agent],
-    output_type=Query_Output
+    tools=[WebSearchTool(), user_output],
+    handoffs=[room_agent, flat_agent, studio_agent,location_agent],
+    # output_type=
 )
 async def main():
     # user_id = input("Enter your user ID: ") or "demo_user"
@@ -73,12 +92,11 @@ async def main():
             print("Exiting...")
             break
         try:
-            result = await Runner.run(
-                agent,
-                input=user_input,
-                session=session,
-            )
-            print(result.final_output if result.final_output else result)
+            if is_location_query(user_input):
+                result = await Runner.run(location_agent, input=user_input, session=session)
+            else:
+                result = await Runner.run(agent, input=user_input, session=session)
+            print("Agent:", result.final_output)
         except Exception as e:
             print("Error:", e)
 if __name__ == "__main__":
