@@ -19,7 +19,19 @@ client = AsyncOpenAI(
     base_url=BASE_URL
 )
 set_default_openai_client(client)
-session = SQLiteSession("123", "realestate_agent.db")
+# session = SQLiteSession("123", "realestate_agent.db")
+# --- replace the single global session with this cache + getter ---
+SESSION_DB = "realestate_agent.db"
+_SESSIONS: dict[str, SQLiteSession] = {}
+
+def get_session(sid: str) -> SQLiteSession:
+    # reuse per-session-id to avoid opening repeatedly
+    s = _SESSIONS.get(sid)
+    if s is None:
+        s = SQLiteSession(sid, SESSION_DB)
+        _SESSIONS[sid] = s
+    return s
+
 
 class Query_Output(BaseModel):
     price: str
@@ -85,20 +97,24 @@ agent = Agent(
     # output_type=
 )
 async def main():
-    # user_id = input("Enter your user ID: ") or "demo_user"
-    while True:
-        user_input = input("User: ")
-        if user_input.lower() == "exit":
-            print("Exiting...")
-            break
-        try:
-            if is_location_query(user_input):
-                result = await Runner.run(location_agent, input=user_input, session=session)
-            else:
-                result = await Runner.run(agent, input=user_input, session=session)
-            print("Agent:", result.final_output)
-        except Exception as e:
-            print("Error:", e)
+    async def main():
+    # choose a session id once (per user) or per message
+        session_id = input("Session ID (e.g., user123): ").strip() or "default"
+        while True:
+            user_input = input("User: ")
+            if user_input.lower() == "exit":
+                print("Exiting...")
+                break
+            try:
+                session = get_session(session_id)  # <-- per-user session
+                if is_location_query(user_input):
+                    result = await Runner.run(location_agent, input=user_input, session=session)
+                else:
+                    result = await Runner.run(agent, input=user_input, session=session)
+                print("Agent:", result.final_output)
+            except Exception as e:
+                print("Error:", e)
+
 if __name__ == "__main__":
     asyncio.run(main())
 
