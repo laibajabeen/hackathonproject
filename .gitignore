@@ -1,7 +1,9 @@
 # Node / frontend
 node_modules/
 dist/
-.env
+# Ignore environment files
+*.env
+
 
 # Python / backend
 __pycache__/
@@ -12,3 +14,6 @@ venv/
 # IDEs / editors
 .vscode/
 .idea/
+# Frontend and backend env files
+frontend/.env
+backend/.env
