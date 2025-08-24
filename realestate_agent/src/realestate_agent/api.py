@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Dict
-from realestate_agent.main import agent, Runner, SQLiteSession, is_location_query, location_agent
+from realestate_agent.main import agent, Runner, SQLiteSession,is_email_query, is_location_query, location_agent,email_agent
 
 app = FastAPI()
 
@@ -42,7 +42,10 @@ async def realestate_agent(req: RealEstateRequest):
     session_id = req.session_input.session_id
     session = get_session(session_id)
 
-    if is_location_query(prompt):
+    if is_email_query(prompt):
+        result = await Runner.run(email_agent, input=prompt, session=session)
+        print("Email Agent called")
+    elif is_location_query(prompt):
         result = await Runner.run(location_agent, input=prompt, session=session)
         print("Location Agent called")
     else:
