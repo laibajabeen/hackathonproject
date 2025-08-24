@@ -5,6 +5,7 @@ import PropertyCard from "@/components/PropertyCard";
 import PropertyMap from "@/components/PropertyMap";
 import TravelCalculator from "@/components/TravelCalculator";
 import { Button } from "@/components/ui/button";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -106,6 +107,8 @@ const Index = () => {
   const [agentResponse, setAgentResponse] = useState<string>("");
   const [sessionId, setSessionId] = useState<string>("");
   const [sessionHistory, setSessionHistory] = useState<any[]>([]);
+  const [emailRequest, setEmailRequest] = useState("");
+  const [generatedEmail, setGeneratedEmail] = useState("");
   const { toast } = useToast();
 
   const getSessionHistory = async (sessionId: string) => {
@@ -193,7 +196,25 @@ const Index = () => {
       getSessionHistory(sessionId);
     }
   }, [sessionId]);
+  const handleEmailGeneration = async () => {
+    if (!emailRequest.trim() || !sessionId.trim()) return;
 
+    try {
+      const response = await fetch(`${API_BASE_URL}/realestate-agent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: `Draft email: ${emailRequest}`,
+          session_id: sessionId,
+        }),
+      });
+
+      const data = await response.json();
+      setGeneratedEmail(data.result);
+    } catch (error) {
+      console.error("Email generation failed:", error);
+    }
+  };
   const handleContact = (property: Property) => {
     // If property has a link, you could open it or handle contact differently
     if (property.link) {
@@ -470,6 +491,7 @@ const Index = () => {
           {/* Travel Calculator Sidebar */}
           <div className="lg:col-span-1">
             <TravelCalculator onDestinationsChange={setTravelDestinations} />
+
             {isCalculating && (
               <div className="mt-4 p-4 bg-primary/10 rounded-lg text-center">
                 <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
@@ -478,6 +500,34 @@ const Index = () => {
                 </p>
               </div>
             )}
+            <div className="mt-6 p-4 bg-card rounded-lg shadow-card">
+              <h4 className="font-medium mb-3">📧 Email Composer</h4>
+
+              <input
+                type="text"
+                value={emailRequest}
+                onChange={(e) => setEmailRequest(e.target.value)}
+                placeholder="e.g., Email to landlord about viewing a flat"
+                className="w-full p-2 border rounded mb-3"
+              />
+
+              <button
+                onClick={handleEmailGeneration}
+                className="w-full bg-primary text-white p-2 rounded mb-3"
+              >
+                Generate Email
+              </button>
+
+              {generatedEmail && (
+                <textarea
+                  value={generatedEmail}
+                  onChange={(e) => setGeneratedEmail(e.target.value)}
+                  rows={8}
+                  className="w-full p-2 border rounded text-sm"
+                  placeholder="Generated email will appear here..."
+                />
+              )}
+            </div>
 
             {/* Show current destinations */}
             {travelDestinations.length > 0 && (

@@ -5,11 +5,8 @@ from openai import AsyncOpenAI
 from dotenv import load_dotenv
 import asyncio
 import os
-from dotenv import load_dotenv
 
-# This looks for a .env file in the current working directory (backend/)
 load_dotenv()
-
 
 set_tracing_disabled(disabled=True)  # Disable OpenAI tracing
 set_default_openai_api("responses")
@@ -36,7 +33,6 @@ def get_session(sid: str) -> SQLiteSession:
         _SESSIONS[sid] = s
     return s
 
-
 # --- Output schema ---
 class Query_Output(BaseModel):
     price: str
@@ -45,6 +41,12 @@ class Query_Output(BaseModel):
     link: str
     property_type: str
 
+def is_email_query(query: str) -> bool:
+    keywords = [
+        "email", "contact", "reach out", "inquire", "inquiry", "message", "send an email"
+    ]
+    query_lower = query.lower()
+    return any(kw in query_lower for kw in keywords)
 
 def is_location_query(query: str) -> bool:
     keywords = [
@@ -52,7 +54,6 @@ def is_location_query(query: str) -> bool:
     ]
     query_lower = query.lower()
     return any(kw in query_lower for kw in keywords)
-
 
 @function_tool()
 def user_output(info: Query_Output):
@@ -65,12 +66,17 @@ def user_output(info: Query_Output):
         f"Link: {info.link}, Property Type: {info.property_type}"
     )
 
-
 # --- Agents ---
+email_agent = Agent(
+    name="Email Assistant",
+    instructions="""You are an email agent assistant. When handed off a query, always write a complete, polite, and professional email based on the user's request. Include a subject line and a greeting. You can assist with composing emails to landlords, agents, or other relevant parties based on user input. You also have memory capabilities!""",
+    tools=[WebSearchTool()],
+    model=MODEL
+)
+
 room_agent = Agent(
     name="Room Assistant",
-    instructions="""You are a room agent assistant. You help users find information about rooms in the UK from websites like Rightmove, Zoopla, and SpareRoom. 
-    You answer questions related to price, location, postcode, link, and property type, using the web search tool to get live data every time.
+    instructions="""You are a room agent assistant. You help users find information about rooms in the UK from websites like Rightmove, Zoopla, and SpareRoom. You answer questions related to price, location, postcode, link, and property type, using the web search tool to get live data every time.
     You also have memory capabilities!""",
     tools=[WebSearchTool()],
     model=MODEL,
@@ -78,8 +84,7 @@ room_agent = Agent(
 
 flat_agent = Agent(
     name="Flat Assistant",
-    instructions="""You are a flat agent assistant. You help users find information about flats in the UK from websites like Rightmove, Zoopla, and SpareRoom. 
-    You answer questions related to price, location, postcode, link, and property type, using the web search tool to get live data every time.   
+    instructions="""You are a flat agent assistant. You help users find information about flats in the UK from websites like Rightmove, Zoopla, and SpareRoom. You answer questions related to price, location, postcode, link, and property type, using the web search tool to get live data every time.   
     You also have memory capabilities!""",
     tools=[WebSearchTool()],
     model=MODEL,
@@ -108,12 +113,11 @@ agent = Agent(
     instructions="""You are a helpful assistant for real estate inquiries. 
     You will assist users with searching rooms according to postcode, price, distance from specific location. 
     Search websites like Rightmove, Zoopla, and Spareroom using the websearch tool, 
-    and provide detailed information about properties in the format set by the tool user_output.""",
+    help them write emails with the help of the email_agent and provide detailed information about properties in the format set by the tool user_output.""",
     model=MODEL,
     tools=[WebSearchTool(), user_output],
-    handoffs=[room_agent, flat_agent, studio_agent, location_agent],
+    handoffs=[room_agent, flat_agent, studio_agent, location_agent, email_agent],
 )
-
 
 # --- Main loop ---
 async def main():
@@ -132,7 +136,6 @@ async def main():
             print("Agent:", result.final_output)
         except Exception as e:
             print("Error:", e)
-
 
 if __name__ == "__main__":
     asyncio.run(main())
