@@ -1,0 +1,119 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* UK RealEstate Buddy Design System */
+
+@layer base {
+  :root {
+    /* Core Brand Colors - UK-inspired professional palette */
+    --background: 0 0% 99%;
+    --foreground: 215 25% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
+
+    /* Primary - Professional British Blue */
+    --primary: 213 94% 45%;
+    --primary-foreground: 0 0% 98%;
+    --primary-hover: 213 94% 40%;
+
+    /* Secondary - Sage Green for trust/reliability */
+    --secondary: 150 30% 95%;
+    --secondary-foreground: 150 60% 25%;
+
+    /* Accent - Warm accent for highlights */
+    --accent: 28 76% 67%;
+    --accent-foreground: 0 0% 98%;
+
+    --muted: 215 15% 96%;
+    --muted-foreground: 215 15% 45%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 215 15% 88%;
+    --input: 215 15% 88%;
+    --ring: 213 94% 45%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 215 25% 15%;
+    --foreground: 0 0% 98%;
+
+    --card: 215 25% 15%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 215 25% 15%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 213 94% 55%;
+    --primary-foreground: 215 25% 15%;
+    --primary-hover: 213 94% 60%;
+
+    --secondary: 215 20% 20%;
+    --secondary-foreground: 0 0% 98%;
+
+    --accent: 28 76% 67%;
+    --accent-foreground: 215 25% 15%;
+
+    --muted: 215 20% 20%;
+    --muted-foreground: 215 15% 65%;
+
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 215 20% 25%;
+    --input: 215 20% 25%;
+    --ring: 213 94% 55%;
+
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-inter;
+  }
+}
+
+@layer components {
+  /* Hero Button Variant */
+  .btn-hero {
+    @apply bg-gradient-to-r from-primary to-primary-hover text-primary-foreground px-8 py-4 rounded-xl font-medium shadow-elegant hover:shadow-hover transform hover:scale-105 transition-all duration-300;
+  }
+
+  /* Property Card */
+  .property-card {
+    @apply bg-card border border-border rounded-xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-300 hover:-translate-y-1;
+  }
+
+  /* Search Input */
+  .search-input {
+    @apply bg-card border-2 border-border rounded-xl px-6 py-4 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-200;
+  }
+
+  /* Glass Effect */
+  .glass {
+    @apply bg-white/80 backdrop-blur-sm border border-white/20;
+  }
+}
