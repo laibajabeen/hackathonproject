@@ -39,6 +39,14 @@ class Query_Output(BaseModel):
     postcode: str
     link: str
     property_type: str
+
+def is_email_query(query: str) -> bool:
+    keywords = [
+        "email", "contact", "reach out", "inquire", "inquiry", "message", "send an email"
+    ]
+    query_lower = query.lower()
+    return any(kw in query_lower for kw in keywords)
+
 def is_location_query(query: str) -> bool:
     keywords = [
         "distance", "how far", "nearest", "close to", "near", "from", "location", "coordinates"
@@ -53,6 +61,15 @@ def user_output(info:Query_Output) :
     """
     return f"Following is the property found matching your search, Price: {info.price}, Location: {info.location}, Postcode: {info.postcode}, Link: {info.link}, Property Type: {info.property_type}"
     
+
+email_agent = Agent(
+    name="Email Assistant",
+    instructions="""You are an email agent assistant. When handed off a query, always write a complete, polite, and professional email based on the user's request. Include a subject line and a greeting. You can assist with composing emails to landlords, agents, or other relevant parties based on user input. You also have memory capabilities!""",
+    tools=[WebSearchTool()],
+    model=MODEL
+)
+
+
 
 room_agent = Agent(
     name="Room Assistant",
@@ -90,30 +107,29 @@ location_agent = Agent(
 
 agent = Agent(
     name="Realestate Assistant",
-    instructions="You are a helpful assistant for real estate inquiries. You will assist users with searching rooms according to postcode, price, distance from specific location, search website like Rightmove,Zoopla and Spareroom, use thw websearch tool to find relevant listings, and provide detailed information about properties in the format set by the tool user_output.",
+    instructions="You are a helpful assistant for real estate inquiries. You will assist users with searching rooms according to postcode, price, distance from specific location, search website like Rightmove,Zoopla and Spareroom, use the websearch tool to find relevant listings, help them write emails with the help of the email_agent and provide detailed information about properties in the format set by the tool user_output.",
     model=MODEL,
     tools=[WebSearchTool(), user_output],
-    handoffs=[room_agent, flat_agent, studio_agent,location_agent],
-    # output_type=
+    handoffs=[room_agent, flat_agent, studio_agent,location_agent, email_agent],
+    
 )
 async def main():
-    async def main():
     # choose a session id once (per user) or per message
-        session_id = input("Session ID (e.g., user123): ").strip() or "default"
-        while True:
-            user_input = input("User: ")
-            if user_input.lower() == "exit":
-                print("Exiting...")
-                break
-            try:
-                session = get_session(session_id)  # <-- per-user session
-                if is_location_query(user_input):
-                    result = await Runner.run(location_agent, input=user_input, session=session)
-                else:
-                    result = await Runner.run(agent, input=user_input, session=session)
-                print("Agent:", result.final_output)
-            except Exception as e:
-                print("Error:", e)
+    session_id = input("Session ID (e.g., user123): ").strip() or "default"
+    while True:
+        user_input = input("User: ")
+        if user_input.lower() == "exit":
+            print("Exiting...")
+            break
+        try:
+            session = get_session(session_id)  # <-- per-user session
+            if is_location_query(user_input):
+                result = await Runner.run(location_agent, input=user_input, session=session)
+            else:
+                result = await Runner.run(agent, input=user_input, session=session)
+            print("Agent:", result.final_output)
+        except Exception as e:
+            print("Error:", e)
 
 if __name__ == "__main__":
     asyncio.run(main())
