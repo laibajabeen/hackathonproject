@@ -105,7 +105,7 @@ const TravelCalculator = ({ onDestinationsChange }: TravelCalculatorProps) => {
               className="search-input"
             />
             <Input
-              placeholder="Address or postcode"
+              placeholder="Address"
               value={newDestination.address}
               onChange={(e) =>
                 setNewDestination((prev) => ({
